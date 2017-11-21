@@ -9,6 +9,9 @@ import re
 import xlwings
 
 
+_MATCH_ROWS = set()
+
+
 def match_account(excel_path, sheet_name, match_column1, match_column2, account_column1, account_column2, regex1=None, regex2=None, last_row=1000):
     """
     Match the account and remove the matched ones in a new excel file.
@@ -43,10 +46,11 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
                     if matched_row:
                         account_value2 += sheet.range('{0}{1}'.format(account_column2, str(matched_row))).value
 
-                # mark these lines if the account is matched?
+                # mark the cell if the account is matched
                 if account_value1 == account_value2:
+                    sheet.range('{0}{1}'.format(match_column1, cell.row)).color = (0, 0, 255)
                     print(id_string)
-                    match_num+=1
+                    match_num += 1
 
     print('======================')
     print(match_num)
@@ -54,6 +58,9 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
 
 def match_string_in_column(column_cells, id):
     for cell in column_cells:
+        # Assume the id is unique in match_column1
+        if cell.row in _MATCH_ROWS:
+            continue
         if cell.value:
             if isinstance(cell.value, float):
                 value = str(int(cell.value))
@@ -61,6 +68,7 @@ def match_string_in_column(column_cells, id):
                 value = str(cell.value)
 
             if value == id:
+                _MATCH_ROWS.add(cell.row)
                 return cell.row
     else:
         return None

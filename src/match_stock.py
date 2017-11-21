@@ -30,10 +30,12 @@ def _clean_match_column1(match_cells, account_column, regex):
                 id_string = match.group(1)
                 id_list = tuple(re.split(r'[,/\s]\s*', id_string))  # todo:handle if not matched by regex split
                 if id_list in result:
-                    result[id_list].value += match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value
+                    result[id_list].value += match_cells.sheet.range(
+                        '{0}{1}'.format(account_column, str(cell.row))).value
                     result[id_list].rows.append(cell.row)
                 else:
-                    result[id_list] = MyCell(match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value, cell.row)
+                    result[id_list] = MyCell(
+                        match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value, cell.row)
     return result
 
 
@@ -49,12 +51,13 @@ def _clean_match_column2(match_cells, account_column):
             else:
                 value = str(cell.value)
             assert value not in result
-            result[value] = MyCell(match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value, cell.row)
+            result[value] = MyCell(match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value,
+                                   cell.row)
     return result
 
 
 def match_account(excel_path, sheet_name, match_column1, match_column2, account_column1, account_column2, regex1=None,
-                  regex2=None, last_row=1000):
+                  regex2=None, mark_color=(0, 200, 100,), last_row=1000):
     """
     Match the account and remove the matched ones in a new excel file.
     :param excel_path: full path of the excel file
@@ -65,6 +68,7 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
     :param account_column2: account in this column and in the same row of match_column2 is compared to account_column1
     :param regex1: regex to extract patterns in match_column1
     :param regex2: regex to extract patterns in match_column2
+    :param mark_color: the RGB color to mark the matched cell's background
     :param last_row: the number of last row
     :return:
     """
@@ -85,7 +89,7 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
 
         if int(match_dict1[id_list].value) == int(account_value2):
             for row in match_dict1[id_list].rows:
-                sheet.range('{0}{1}'.format(match_column1, row)).color = (0, 200, 100)
+                sheet.range('{0}{1}'.format(match_column1, row)).color = mark_color
             print(id_list)
             match_num += 1
 
@@ -94,4 +98,6 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
 
 
 if __name__ == '__main__':
-    match_account('/Users/CYu/Downloads/苹果调节表201710.xlsx', '入库差异', 'F', 'J', 'E', 'L', '\(([\d,/\s]+)\)', last_row=2000)
+    # match_account('/Users/CYu/Downloads/苹果调节表201710.xlsx', '入库差异', 'F', 'J', 'E', 'L', '\(([\d,/\s]+)\)', last_row=2000)
+    match_account('/Users/CYu/Downloads/苹果调节表201710.xlsx', '入库差异', 'F', 'J', 'E', 'L', 'DN\:([\d,/\s]+)',
+                  mark_color=(0, 100, 200), last_row=2000)

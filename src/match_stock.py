@@ -9,10 +9,52 @@ import re
 import xlwings
 
 
-_MATCH_ROWS = set()
+class MyCell(object):
+    def __init__(self, value, rows):
+        self.value = value  # total value
+        self.rows = [rows]  # list of row number
 
 
-def match_account(excel_path, sheet_name, match_column1, match_column2, account_column1, account_column2, regex1=None, regex2=None, last_row=1000):
+def _clean_match_column1(match_cells, account_column, regex):
+    """
+    Extract content according to regex and transfer column into a dict.
+    Merge the rows into one if they are the same (add the account together).
+    :return: a dict which key is the extracted content (a list of id) and value is account number
+    """
+    result = dict()
+    for cell in match_cells:
+        if cell.value:
+            match = re.search(regex, cell.value)
+            if match:
+                # get the IDs, e.g. '1344,3233,6764'
+                id_string = match.group(1)
+                id_list = tuple(re.split(r'[,/\s]\s*', id_string))  # todo:handle if not matched by regex split
+                if id_list in result:
+                    result[id_list].value += match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value
+                    result[id_list].rows.append(cell.row)
+                else:
+                    result[id_list] = MyCell(match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value, cell.row)
+    return result
+
+
+def _clean_match_column2(match_cells, account_column):
+    """
+    :return: a dict which key is the id and value is account number
+    """
+    result = dict()
+    for cell in match_cells:
+        if cell.value:
+            if isinstance(cell.value, float):
+                value = str(int(cell.value))
+            else:
+                value = str(cell.value)
+            assert value not in result
+            result[value] = MyCell(match_cells.sheet.range('{0}{1}'.format(account_column, str(cell.row))).value, cell.row)
+    return result
+
+
+def match_account(excel_path, sheet_name, match_column1, match_column2, account_column1, account_column2, regex1=None,
+                  regex2=None, last_row=1000):
     """
     Match the account and remove the matched ones in a new excel file.
     :param excel_path: full path of the excel file
@@ -30,48 +72,25 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
     sheet = wb.sheets[sheet_name]
     match_cells1 = sheet.range('{0}1:{1}{2}'.format(match_column1, match_column1, str(last_row)))
     match_cells2 = sheet.range('{0}1:{1}{2}'.format(match_column2, match_column2, str(last_row)))
+    match_dict1 = _clean_match_column1(match_cells1, account_column1, regex1)
     # todo: use regex2 to clean the match_cells2 first
+    match_dict2 = _clean_match_column2(match_cells2, account_column2)
     match_num = 0
-    for cell in match_cells1:
-        if cell.value:
-            result = re.search(regex1, cell.value)
-            if result:
-                # get the IDs, e.g. '1344,3233,6764'
-                id_string = result.group(1)
-                id_list = re.split(r'[,/\s]\s*', id_string)  # todo:handle if not matched by regex split
-                account_value1 = sheet.range('{0}{1}'.format(account_column1, str(cell.row))).value
-                account_value2 = 0
-                for id in id_list:
-                    matched_row = match_string_in_column(match_cells2, id)
-                    if matched_row:
-                        account_value2 += sheet.range('{0}{1}'.format(account_column2, str(matched_row))).value
+    for id_list in match_dict1:
+        account_value2 = 0
+        for id in id_list:
+            my_cell = match_dict2.get(id)
+            if my_cell:
+                account_value2 += my_cell.value
 
-                # mark the cell if the account is matched
-                if account_value1 == account_value2:
-                    sheet.range('{0}{1}'.format(match_column1, cell.row)).color = (0, 0, 255)
-                    print(id_string)
-                    match_num += 1
+        if int(match_dict1[id_list].value) == int(account_value2):
+            for row in match_dict1[id_list].rows:
+                sheet.range('{0}{1}'.format(match_column1, row)).color = (0, 200, 100)
+            print(id_list)
+            match_num += 1
 
-    print('======================')
+    print('===========Total matched===========')
     print(match_num)
-
-
-def match_string_in_column(column_cells, id):
-    for cell in column_cells:
-        # Assume the id is unique in match_column1
-        if cell.row in _MATCH_ROWS:
-            continue
-        if cell.value:
-            if isinstance(cell.value, float):
-                value = str(int(cell.value))
-            else:
-                value = str(cell.value)
-
-            if value == id:
-                _MATCH_ROWS.add(cell.row)
-                return cell.row
-    else:
-        return None
 
 
 if __name__ == '__main__':

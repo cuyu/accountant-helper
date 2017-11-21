@@ -82,14 +82,18 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
     match_num = 0
     for id_list in match_dict1:
         account_value2 = 0
+        match_rows2 = []
         for id in id_list:
             my_cell = match_dict2.get(id)
             if my_cell:
                 account_value2 += my_cell.value
+                match_rows2 += my_cell.rows
 
         if int(match_dict1[id_list].value) == int(account_value2):
             for row in match_dict1[id_list].rows:
                 sheet.range('{0}{1}'.format(match_column1, row)).color = mark_color
+            for row in match_rows2:
+                sheet.range('{0}{1}'.format(match_column2, row)).color = mark_color
             print(id_list)
             match_num += 1
 
@@ -98,6 +102,6 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
 
 
 if __name__ == '__main__':
-    # match_account('/Users/CYu/Downloads/苹果调节表201710.xlsx', '入库差异', 'F', 'J', 'E', 'L', '\(([\d,/\s]+)\)', last_row=2000)
-    match_account('/Users/CYu/Downloads/苹果调节表201710.xlsx', '入库差异', 'F', 'J', 'E', 'L', 'DN\:([\d,/\s]+)',
-                  mark_color=(0, 100, 200), last_row=2000)
+    match_account('/Users/CYu/Downloads/苹果调节表201710(1).xlsx', '入库差异', 'F', 'J', 'E', 'L', '\(([\d,/\s]+)\)', last_row=3000)
+    # match_account('/Users/CYu/Downloads/苹果调节表201710(1).xlsx', '入库差异', 'F', 'J', 'E', 'L', 'DN\:([\d,/\s]+)',
+    #               mark_color=(0, 100, 200), last_row=3000)

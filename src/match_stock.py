@@ -19,7 +19,7 @@ def _clean_match_column1(match_cells, account_column, regex):
     """
     Extract content according to regex and transfer column into a dict.
     Merge the rows into one if they are the same (add the account together).
-    :return: a dict which key is the extracted content (a list of id) and value is account number
+    :return: a dict which key is the extracted content (a list of id) and value is `MyCell` object
     """
     result = dict()
     for cell in match_cells:
@@ -41,7 +41,7 @@ def _clean_match_column1(match_cells, account_column, regex):
 
 def _clean_match_column2(match_cells, account_column):
     """
-    :return: a dict which key is the id and value is account number
+    :return: a dict which key is the id and value is `MyCell` object
     """
     result = dict()
     for cell in match_cells:
@@ -70,7 +70,7 @@ def match_account(excel_path, sheet_name, match_column1, match_column2, account_
     :param regex2: regex to extract patterns in match_column2
     :param mark_color: the RGB color to mark the matched cell's background
     :param last_row: the number of last row
-    :return:
+    :return: None
     """
     wb = xlwings.Book(excel_path)
     sheet = wb.sheets[sheet_name]
